@@ -22,6 +22,8 @@ function App() {
     /* ===== RIGHT SIDEBAR - Element Selection ===== */
       selectedElements: [],
       deleteField: ()=>{},
+      getFieldData: ()=>{},
+      setFieldData: ()=>{},
   })
   const [pages,setPages] = useState([])
   useEffect(()=>{
@@ -56,7 +58,7 @@ function App() {
           const font = new Annotations.Font({ name: 'Helvetica' });
 
           // create a form field
-          const field = new Annotations.Forms.Field("some text field name", {
+          const field = new Annotations.Forms.Field("FormAnnotation-TextField", {
             type: 'Tx',
             // defaultValue: "some placeholder default text value",
             value: "Text",
@@ -86,7 +88,7 @@ function App() {
         function insertProgrammaticallyCheckboxField(){
           // set flags for required and edit
           const flags = new Annotations.WidgetFlags();
-          flags.set('Required', true);
+          // flags.set('Required', true);
           flags.set('Edit', true);
       
           // set font type
@@ -94,7 +96,7 @@ function App() {
       
           // create a form field
           // https://www.pdftron.com/api/web/Core.Annotations.Forms.Field.html
-          const field = new Annotations.Forms.Field("some checkbox field name", {
+          const field = new Annotations.Forms.Field("FormAnnotation-CheckboxField", {
             type: 'Btn',
             value: 'On',
             flags,
@@ -158,7 +160,7 @@ function App() {
           const font = new Annotations.Font({ name: 'Helvetica' });
 
           // create a form field
-          const field = new Annotations.Forms.Field("some radio field group name", {
+          const field = new Annotations.Forms.Field("FormAnnotation-RadioField", {
             type: 'Btn',
             value: 'Off',
             flags: flags,
@@ -226,7 +228,7 @@ function App() {
           ];
 
           // create a form field
-          const field = new Annotations.Forms.Field("some combo box field name", {
+          const field = new Annotations.Forms.Field("FormAnnotation-BoxField", {
             type: 'Ch',
             value: options[0].value,
             flags,
@@ -258,7 +260,7 @@ function App() {
           flags.set('Required', true);
 
           // create a form field
-          const field = new Annotations.Forms.Field("some signature field name", { 
+          const field = new Annotations.Forms.Field("FormAnnotation-SignatureField", { 
             type: 'Sig', 
             flags,
           });
@@ -328,7 +330,8 @@ function App() {
           ...baseController,
           goToPage: setCurrentPageNumber
         }));
-        documentViewer.addEventListener('visibilityChanged', () => {
+        // https://www.pdftron.com/api/web/Core.DocumentViewer.html
+        documentViewer.addEventListener('pageNumberUpdated', () => {
           const currentPage = instance.UI.getCurrentPageNumber()
           setController(baseController=>({
             ...baseController,
@@ -347,24 +350,28 @@ function App() {
     
           // console.log('annotation list', annotations);
           const selectedAnnots = annotationManager.getSelectedAnnotations();
+          setController(baseController=>({
+            ...baseController,
+            selectedElements: selectedAnnots
+          }));
           // console.log('selectedAnnots',selectedAnnots);
-          selectedAnnots.map(annotation=>{
+          // selectedAnnots.map(annotation=>{
 
-            /* const fieldManager = annotationManager.getFieldManager();
-            const field = fieldManager.getField(annotation.Id);
-            console.log('field',field) */
+          //   /* const fieldManager = annotationManager.getFieldManager();
+          //   const field = fieldManager.getField(annotation.Id);
+          //   console.log('field',field) */
 
-            const fieldManager = annotationManager.getFieldManager();
-            fieldManager.forEachField((field)=>{
-              // https://www.pdftron.com/api/web/Core.Annotations.Forms.Field.html
-              console.log('field',field)
-              console.log('field.type',field.type)
-              console.log('field.flags',field.flags)
-            });
+          //   const fieldManager = annotationManager.getFieldManager();
+          //   fieldManager.forEachField((field)=>{
+          //     // https://www.pdftron.com/api/web/Core.Annotations.Forms.Field.html
+          //     console.log('field',field)
+          //     console.log('field.type',field.type)
+          //     console.log('field.flags',field.flags)
+          //   });
 
-            // fieldManager.forEachField(getFieldNameAndValue);
-            return annotation
-          });
+          //   // fieldManager.forEachField(getFieldNameAndValue);
+          //   return annotation
+          // });
     
           // if (annotations === null && action === 'deselected') {
           //   console.log('all annotations deselected');
@@ -377,6 +384,40 @@ function App() {
           ...baseController,
           deleteField: deleteField
         }));
+        function getFieldData(annotation){
+          const fieldManager = annotationManager.getFieldManager();
+          const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
+          console.log('field',field)
+          console.log('field.flags',field.flags)
+          return ({
+            isRequired: field.flags.ik.Required,
+          })
+        }
+        setController(baseController=>({
+          ...baseController,
+          getFieldData: getFieldData
+        }));
+        documentViewer.addEventListener('documentLoaded', () => {
+          documentViewer.getAnnotationsLoadedPromise().then(function() {
+            function setFieldData(annotation,key,value){
+              const fieldManager = annotationManager.getFieldManager();
+              const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
+              console.log('field',field)
+              console.log('key',key)
+              console.log('value',value)
+              field.set({
+                [key]: value
+              })
+              // field.widgets.map(annot => {
+              //   annot.fieldFlags.set(key,value);
+              // });
+            }
+            setController(baseController=>({
+              ...baseController,
+              setFieldData: setFieldData
+            }));
+          });
+        });
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
     })
   },[])
@@ -399,7 +440,7 @@ function App() {
           {controller.selectedElements.length<1?(
             <div className="page-manipulation">
               <h2>Form details</h2>
-              <p>Viewing: Page  <b>{controller.currentPage}</b> of {controller.pageCount}</p>
+              <p>Viewing: Page  {controller.currentPage} of {controller.pageCount}</p>
               <ul>
                 {
                   pages.map(page=>(<li key={page.number}>
@@ -418,7 +459,7 @@ function App() {
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Forms.FieldManager.html#main */}
                 <h2>{annotation.getFormFieldPlaceHolderType()}</h2>
                 <button type="button" onClick={()=>controller.deleteField(annotation)}>Remove</button>
-                <p>Required:</p>
+                <p>Required: {controller.getFieldData(annotation).isRequired?'yes':'no'} <button type="button" onClick={()=>controller.setFieldData(annotation,'Required',true)}>Yes</button> <button type="button" onClick={()=>controller.setFieldData(annotation,'Required',false)}>No</button></p>
                 <p>Field name:</p>
                 <p>Helper:</p>
               </span>))}
