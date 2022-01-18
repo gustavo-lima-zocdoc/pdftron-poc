@@ -9,6 +9,8 @@ function App() {
   const [controller,setController] = useState({
     /* ===== ACTIONS - Programmatically ===== */
       selectToolbarGroupForms: ()=>{},
+      selectTextBoxCreating: ()=>{},
+      selectCheckboxCreating: ()=>{},
     /* ===== LEFT SIDEBAR - Insertions ===== */
       insertTextField: ()=>{},
       insertCheckboxField: ()=>{},
@@ -30,11 +32,13 @@ function App() {
     WebViewer(
       {
         path: 'lib',
+        css: '/assets/stylesheet.css',
         initialDoc: '/files/PDFTRON_about.pdf',
       },
       viewerDiv.current
     ).then((instance)=>{
-      const { documentViewer, annotationManager, Annotations } = instance.Core;
+      const { documentViewer, annotationManager, Annotations, Tools } = instance.Core;
+      console.log('instance.Core',instance.Core)
       console.log('instance.UI',instance.UI)
       /* ===== ACTIONS - Programmatically ===== */
         function selectToolbarGroupForms(){
@@ -43,6 +47,26 @@ function App() {
         setController(baseController=>({
           ...baseController,
           selectToolbarGroupForms: selectToolbarGroupForms
+        }));
+        function selectTextBoxCreating(){
+          console.log('instance.UI',instance.UI)
+          console.log('Tools.CheckBoxFormFieldCreateTool',Tools.CheckBoxFormFieldCreateTool)
+          annotationManager.trigger('textFieldToolGroupButton')
+          // instance.UI.disableElement('textFieldToolGroupButton')
+          // instance.UI.openElement('textFieldToolGroupButton')
+        }
+        setController(baseController=>({
+          ...baseController,
+          selectTextBoxCreating: selectTextBoxCreating
+        }));
+        function selectCheckboxCreating(){
+          annotationManager.trigger('annotation.checkBoxFormField')
+          // instance.UI.disableElement('checkBoxFieldToolGroupButton')
+          // instance.UI.openElement('checkBoxFieldToolGroupButton')
+        }
+        setController(baseController=>({
+          ...baseController,
+          selectCheckboxCreating: selectCheckboxCreating
         }));
       /* ===== ACTIONS - Programmatically ===== */
 
@@ -425,6 +449,8 @@ function App() {
     <div className="App">
       <div className="actions">
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
+        <button type="button" onClick={controller.selectTextBoxCreating}>Texbox Creation</button>
+        <button type="button" onClick={controller.selectCheckboxCreating}>CheckBox Creation</button>
       </div>
       <div className="interface">
         <div className="left-sidebar">
