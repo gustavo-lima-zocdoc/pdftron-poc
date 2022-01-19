@@ -6,6 +6,7 @@ import WebViewer from '@pdftron/webviewer';
 // https://www.pdftron.com/documentation/web/guides/full-api/
 function App() {
   const viewerDiv = useRef(null)
+  const [annotationLink,setAnnotationLink] = useState({})
   const [controller,setController] = useState({
     /* ===== ACTIONS - Programmatically ===== */
       selectToolbarGroupForms: ()=>{},
@@ -38,8 +39,18 @@ function App() {
       viewerDiv.current
     ).then((instance)=>{
       const { documentViewer, annotationManager, Annotations, Tools } = instance.Core;
-      console.log('instance.Core',instance.Core)
-      console.log('instance.UI',instance.UI)
+      // console.log('instance.Core',instance.Core)
+      // console.log('instance.UI',instance.UI)
+
+      /* ===== SETUP ===== */
+      instance.UI.disableElements([
+        'annotationCommentButton',
+        'annotationStyleEditButton',
+        'annotationDeleteButton',
+        'linkButton',
+      ]);
+      /* ===== SETUP ===== */
+
       /* ===== ACTIONS - Programmatically ===== */
         function selectToolbarGroupForms(){
           instance.UI.setToolbarGroup('toolbarGroup-Forms');
@@ -71,163 +82,116 @@ function App() {
       /* ===== ACTIONS - Programmatically ===== */
 
       /* ===== LEFT SIDEBAR - Insertions ===== */
+        function generateGUID(){
+          return Math.floor(Math.random() * 9999) + 1000
+        }
+        function insertAnnotationField({
+          field_type,
+          patient_facing_field_name,
+          field_position: {
+            page_number,
+            x_coordinate,
+            y_coordinate,
+            x_length,
+            y_length,
+          },
+        }){
+          // https://www.pdftron.com/api/web/Core.Annotations.FreeTextAnnotation.html
+          const annotation = new Annotations.FreeTextAnnotation();
+
+          const contents = (field_type==='checkbox')? '' : patient_facing_field_name
+          annotation.setContents(contents)
+
+          annotation.PageNumber = page_number;
+          annotation.X = x_coordinate;
+          annotation.Y = y_coordinate;
+          annotation.Width = x_length;
+          annotation.Height = y_length;
+          annotation.setPadding(new Annotations.Rect(0, 0, 0, 0));
+
+          annotation.FontSize = '16pt';
+          annotation.TextColor = new Annotations.Color(1, 96, 204);
+          annotation.FillColor = new Annotations.Color(220, 234, 249);
+          annotation.StrokeColor = new Annotations.Color(1, 96, 204);
+          
+          annotation.setRotationControlEnabled(false);
+
+          annotationManager.addAnnotation(annotation, { autoFocus: false });
+          annotationManager.redrawAnnotation(annotation);
+          annotationManager.selectAnnotation(annotation);
+          return annotation;
+        }
         function insertProgrammaticallyTextField(){
-          // set flags for multiline and required
-          const flags = new Annotations.WidgetFlags();
-          // flags.set('Multiline', true);
-          flags.set('Required', true);
-          flags.set('Edit', true);
-
-          // set font type
-          const font = new Annotations.Font({ name: 'Helvetica' });
-
-          // create a form field
-          const field = new Annotations.Forms.Field("FormAnnotation-TextField", {
-            type: 'Tx',
-            // defaultValue: "some placeholder default text value",
-            value: "Text",
-            flags,
-            font,
-          });
-
-          // create a widget annotation
-          const widgetAnnot = new Annotations.TextWidgetAnnotation(field)
-
-          // set position and size
-          widgetAnnot.PageNumber = 1;
-          widgetAnnot.X = 100;
-          widgetAnnot.Y = 100;
-          widgetAnnot.Width = 50;
-          widgetAnnot.Height = 20;
-
-          //add the form field and widget annotation
-          annotationManager.addAnnotation(widgetAnnot);
-          annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
+          const FieldPosition = {
+            page_number: instance.UI.getCurrentPageNumber(),
+            x_coordinate: 150,
+            y_coordinate: 200,
+            x_length: 150,
+            y_length: 20,
+          }
+          const IntakeTemplateField = {
+            field_id: generateGUID(),
+            field_type: 'textbox',
+            patient_facing_field_name: 'TextField',
+            field_is_required: true,
+            field_helper_text: 'HelperText',
+            field_position: FieldPosition,
+            // option_group_id: '',
+          }
+          const annotation = insertAnnotationField(IntakeTemplateField);
+          setAnnotationLink(baseAnnotationLink=>({
+            ...baseAnnotationLink,
+            [IntakeTemplateField.field_id]: annotation,
+          }))
+          console.log('annotation.Id',annotation.Id)
         }
         setController(baseController=>({
           ...baseController,
           insertTextField: insertProgrammaticallyTextField
         }));
         function insertProgrammaticallyCheckboxField(){
-          // set flags for required and edit
-          const flags = new Annotations.WidgetFlags();
-          // flags.set('Required', true);
-          flags.set('Edit', true);
-      
-          // set font type
-          const font = new Annotations.Font({ name: 'Helvetica' });
-      
-          // create a form field
-          // https://www.pdftron.com/api/web/Core.Annotations.Forms.Field.html
-          const field = new Annotations.Forms.Field("FormAnnotation-CheckboxField", {
-            type: 'Btn',
-            value: 'On',
-            flags,
-            font,
-          });
+          // https://www.pdftron.com/api/web/Core.Annotations.FreeTextAnnotation.html
+          const freeText = new Annotations.FreeTextAnnotation();
+          freeText.PageNumber = 1;
+          freeText.X = 150;
+          freeText.Y = 200;
+          freeText.Width = 20;
+          freeText.Height = 20;
+          freeText.setPadding(new Annotations.Rect(0, 0, 0, 0));
+          freeText.setContents('');
+          freeText.FillColor = new Annotations.Color(220, 234, 249);
+          freeText.StrokeColor = new Annotations.Color(1, 96, 204);
+          freeText.TextColor = new Annotations.Color(1, 96, 204);
+          freeText.FontSize = '16pt';
+          freeText.setRotationControlEnabled(false);
 
-          console.log('field',field)
-          console.log('field.flags',field.flags)
-          console.log('flags',flags)
-      
-          // create a widget annotation
-          // https://www.pdftron.com/api/web/Core.Annotations.CheckButtonWidgetAnnotation.html#CheckButtonWidgetAnnotation__anchor
-          // caption options are:
-          // "4" = Tick
-          // "l" = Circle
-          // "8" = Cross
-          // "u" = Diamond
-          // "n" = Square
-          // "H" = Star
-          // "" = Check
-          const widgetAnnot = new Annotations.CheckButtonWidgetAnnotation(field, {
-            appearance: 'Off',
-            appearances: {
-              Off: {},
-              Yes: {},
-            },
-            captions: {
-              Normal: "" // Check
-            }
-          });
-          console.log('widgetAnnot',widgetAnnot)
-          console.log('widgetAnnot.Id',widgetAnnot.Id)
-          console.log('widgetAnnot.fieldName',widgetAnnot.fieldName)
-      
-          // set position and size
-          widgetAnnot.PageNumber = 1;
-          widgetAnnot.X = 100;
-          widgetAnnot.Y = 150;
-          widgetAnnot.Width = 20;
-          widgetAnnot.Height = 20;
-      
-          //add the form field and widget annotation
-          annotationManager.addAnnotation(widgetAnnot);
-          annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
+          annotationManager.addAnnotation(freeText, { autoFocus: false });
+          annotationManager.redrawAnnotation(freeText);
+          annotationManager.selectAnnotation(freeText);
         }
         setController(baseController=>({
           ...baseController,
           insertCheckboxField: insertProgrammaticallyCheckboxField
         }));
         function insertProgrammaticallyRadioField(){
-          // set flags for radio and no toggle to off
-          const flags = new Annotations.WidgetFlags();
-          flags.set(Annotations.WidgetFlags.RADIO, true);
+          // https://www.pdftron.com/api/web/Core.Annotations.FreeTextAnnotation.html
+          const freeText = new Annotations.FreeTextAnnotation();
+          freeText.PageNumber = 1;
+          freeText.X = 150;
+          freeText.Y = 200;
+          freeText.Width = 20;
+          freeText.Height = 20;
+          freeText.setPadding(new Annotations.Rect(0, 0, 0, 0));
+          freeText.setContents('');
+          freeText.FillColor = new Annotations.Color(220, 234, 249);
+          freeText.StrokeColor = new Annotations.Color(1, 96, 204);
+          freeText.TextColor = new Annotations.Color(1, 96, 204);
+          freeText.FontSize = '16pt';
+          freeText.setRotationControlEnabled(false);
 
-          // optional to keep at least one state active
-          flags.set(Annotations.WidgetFlags.NO_TOGGLE_TO_OFF, true);
-          flags.set('Required', true); 
-
-          // set font type
-          const font = new Annotations.Font({ name: 'Helvetica' });
-
-          // create a form field
-          const field = new Annotations.Forms.Field("FormAnnotation-RadioField", {
-            type: 'Btn',
-            value: 'Off',
-            flags: flags,
-            font: font,
-          });
-
-          // create a widget annotation for the first button
-          const widgetAnnot1 = new Annotations.RadioButtonWidgetAnnotation(field, {
-            appearance: 'Off',
-            appearances: {
-              Off: {},
-              First: {},
-            },
-          });
-
-          // create a widget annotation for the second button
-          const widgetAnnot2 = new Annotations.RadioButtonWidgetAnnotation(field, {
-            appearance: 'Off',
-            appearances: {
-              Off: {},
-              Second: {},
-            },
-          });
-
-          // set position and size
-          widgetAnnot1.PageNumber = 1;
-          widgetAnnot1.X = 100;
-          widgetAnnot1.Y = 100;
-          widgetAnnot1.Width = 50;
-          widgetAnnot1.Height = 20;
-
-          // set position and size
-          widgetAnnot2.PageNumber = 1;
-          widgetAnnot2.X = 150;
-          widgetAnnot2.Y = 150;
-          widgetAnnot2.Width = 50;
-          widgetAnnot2.Height = 20;
-
-          //add the form field and widget annotation
-          annotationManager.addAnnotation(widgetAnnot1);
-          annotationManager.addAnnotation(widgetAnnot2);
-          annotationManager.drawAnnotationsFromList([widgetAnnot1, widgetAnnot2]);
-          annotationManager.getFieldManager().addField(field);
+          annotationManager.addAnnotation(freeText, { autoFocus: false });
+          annotationManager.redrawAnnotation(freeText);
+          annotationManager.selectAnnotation(freeText);
         }
         setController(baseController=>({
           ...baseController,
@@ -409,13 +373,16 @@ function App() {
           deleteField: deleteField
         }));
         function getFieldData(annotation){
-          const fieldManager = annotationManager.getFieldManager();
+          return ({
+            isRequired: 'what',
+          })
+          /*const fieldManager = annotationManager.getFieldManager();
           const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
           console.log('field',field)
           console.log('field.flags',field.flags)
           return ({
             isRequired: field.flags.ik.Required,
-          })
+          })*/
         }
         setController(baseController=>({
           ...baseController,
@@ -451,6 +418,7 @@ function App() {
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
         <button type="button" onClick={controller.selectTextBoxCreating}>Texbox Creation</button>
         <button type="button" onClick={controller.selectCheckboxCreating}>CheckBox Creation</button>
+        <br/>
       </div>
       <div className="interface">
         <div className="left-sidebar">
