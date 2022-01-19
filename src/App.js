@@ -2,6 +2,7 @@ import './App.css';
 import { useRef, useEffect, useState } from 'react';
 import WebViewer from '@pdftron/webviewer';
 
+// https://www.pdftron.com/documentation/web/guides/full-api/operations/
 // https://www.pdftron.com/documentation/web/guides/forms/apis/
 // https://www.pdftron.com/documentation/web/guides/full-api/
 function App() {
@@ -47,6 +48,7 @@ function App() {
           'annotationDeleteButton',
           'linkButton',
           'annotationGroupButton',
+          'annotationUngroupButton',
         ]);
       /* ===== SETUP ===== */
 
@@ -310,6 +312,7 @@ function App() {
               option_group_helper_text: 'GroupHelper',
               option_group_is_required: true,
             }
+            console.log('groups')
             setOption_groups(baseOption_groups=>[
               ...baseOption_groups,
               IntakeTemplateOptionGroup
@@ -318,6 +321,28 @@ function App() {
             selectedAnnotations.forEach(selectedAnnotation => {
               setFieldData(selectedAnnotation,'option_group_id',IntakeTemplateOptionGroup.option_group_id);
             });
+            // https://www.pdftron.com/api/web/Core.AnnotationManager.html
+            annotationManager.groupAnnotations(selectedAnnotations[0],selectedAnnotations);
+          } else {
+            setOption_groups(baseOption_groups=>{
+              const foundOption_groupIndex = baseOption_groups.findIndex(baseOption_group=>baseOption_group.option_group_id===selectedAnnotations[0].field.option_group_id);
+              if(foundOption_groupIndex>=0) {
+                const newBaseOption_groups = [...baseOption_groups]
+                newBaseOption_groups.splice(foundOption_groupIndex,1)
+                return newBaseOption_groups
+              }
+              return [
+                ...baseOption_groups,
+              ]
+            })
+            const selectedAnnotations = annotationManager.getSelectedAnnotations();
+            setTimeout(() => {
+              selectedAnnotations.forEach(selectedAnnotation => {
+                setFieldData(selectedAnnotation,'option_group_id',null);
+              });
+              // https://www.pdftron.com/api/web/Core.AnnotationManager.html
+              annotationManager.ungroupAnnotations(selectedAnnotations);
+            }, 100);
           }
         }
         setController(baseController=>({
@@ -332,13 +357,13 @@ function App() {
       <div className="actions">
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
         {/* {JSON.stringify(annotationsReference)} */}
+        {JSON.stringify(fields)}
         <br/>
       </div>
       <div className="interface">
         <div className="left-sidebar">
           <button type="button" onClick={controller.insertTextField}>Textbox</button><br />
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
-          {JSON.stringify(fields)}<br/><br/>
           {JSON.stringify(option_groups)}
         </div>
         <div className="webviewer" ref={viewerDiv}></div>
@@ -373,7 +398,7 @@ function App() {
           ):(
             <div className="element-selection">
               <h2>{controller.selectedAnnotations.length} fields selected</h2>
-              <p><input type="checkbox" onChange={controller.handleGroupingCheckboxes} /> Group checkboxes</p>
+              <p><input type="checkbox" onChange={controller.handleGroupingCheckboxes} checked={controller.selectedAnnotations[0].field.option_group_id?true:false} /> Group checkboxes</p>
             </div>
           )}
         </div>
