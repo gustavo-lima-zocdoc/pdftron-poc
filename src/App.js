@@ -258,7 +258,22 @@ function App() {
           // } else if (action === 'deselected') {
           //   console.log('annotation deselection');
           // }
-          const selectedAnnotations = annotationManager.getSelectedAnnotations();
+          let selectedAnnotations = annotationManager.getSelectedAnnotations();
+          if(selectedAnnotations.length>1){
+            let fieldTypeControl = undefined;
+            selectedAnnotations.forEach(selectedAnnotation => {
+              if(fieldTypeControl!==undefined){
+                if(
+                  fieldTypeControl!==selectedAnnotation.field.field_type ||
+                  selectedAnnotation.field.field_type!=='checkbox'
+                ){
+                  selectedAnnotations = []
+                }
+              } else {
+                fieldTypeControl = selectedAnnotation.field.field_type
+              }
+            });
+          }
           setController(baseController=>({
             ...baseController,
             selectedAnnotations,
