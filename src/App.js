@@ -8,6 +8,7 @@ function App() {
   const viewerDiv = useRef(null)
   const [fields,setFields] = useState([])
   const [annotationsReference,setAnnotationsReference] = useState([])
+  // console.log(fields,annotationsReference)
   const [controller,setController] = useState({
     /* ===== ACTIONS - Programmatically ===== */
       selectToolbarGroupForms: ()=>{},
@@ -21,7 +22,6 @@ function App() {
     /* ===== RIGHT SIDEBAR - Element Selection ===== */
       selectedAnnotations: [],
       deleteField: ()=>{},
-      getFieldData: ()=>{},
       setFieldData: ()=>{},
   })
   const [pages,setPages] = useState([])
@@ -271,43 +271,18 @@ function App() {
           ...baseController,
           deleteField: deleteField
         }));
-        function getFieldData(annotation){
-          return ({
-            isRequired: 'what',
-          })
-          /*const fieldManager = annotationManager.getFieldManager();
-          const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
-          console.log('field',field)
-          console.log('field.flags',field.flags)
-          return ({
-            isRequired: field.flags.ik.Required,
-          })*/
+        function setFieldData(annotation,key,value){
+          annotation.field[key]=value;
+          if(key==='patient_facing_field_name'&&annotation.field.field_type!=='checkbox'){
+            annotation.setContents(value);
+          }
+          annotationManager.updateAnnotation(annotation);
+          handleField(annotation.field,'modify');
         }
         setController(baseController=>({
           ...baseController,
-          getFieldData: getFieldData
+          setFieldData: setFieldData
         }));
-        documentViewer.addEventListener('documentLoaded', () => {
-          documentViewer.getAnnotationsLoadedPromise().then(function() {
-            function setFieldData(annotation,key,value){
-              const fieldManager = annotationManager.getFieldManager();
-              const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
-              console.log('field',field)
-              console.log('key',key)
-              console.log('value',value)
-              field.set({
-                [key]: value
-              })
-              // field.widgets.map(annot => {
-              //   annot.fieldFlags.set(key,value);
-              // });
-            }
-            setController(baseController=>({
-              ...baseController,
-              setFieldData: setFieldData
-            }));
-          });
-        });
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
     })
   },[])
@@ -346,11 +321,11 @@ function App() {
               {controller.selectedAnnotations.map(annotation=>(<span key={annotation.Id}>
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Annotation.html */}
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Forms.FieldManager.html#main */}
-                <h2>{annotation.getFormFieldPlaceHolderType()}</h2>
+                <h2>{annotation.field.field_type}</h2>
                 <button type="button" onClick={()=>controller.deleteField(annotation)}>Remove</button>
-                <p>Required: {controller.getFieldData(annotation).isRequired?'yes':'no'} <button type="button" onClick={()=>controller.setFieldData(annotation,'Required',true)}>Yes</button> <button type="button" onClick={()=>controller.setFieldData(annotation,'Required',false)}>No</button></p>
-                <p>Field name:</p>
-                <p>Helper:</p>
+                <p>Required: {fields.find(field=>field.field_id===annotation.field.field_id)?.field_is_required?'yes':'no'} <button type="button" onClick={()=>controller.setFieldData(annotation,'field_is_required',true)}>Yes</button> <button type="button" onClick={()=>controller.setFieldData(annotation,'field_is_required',false)}>No</button></p>
+                <p>Field name: <input type="text" value={fields.find(field=>field.field_id===annotation.field.field_id)?.patient_facing_field_name} onChange={(e)=>controller.setFieldData(annotation,'patient_facing_field_name',e.target.value)} /></p>
+                <p>Helper: <input type="text" value={fields.find(field=>field.field_id===annotation.field.field_id)?.field_helper_text} onChange={(e)=>controller.setFieldData(annotation,'field_helper_text',e.target.value)} /></p>
               </span>))}
             </div>
           )}
