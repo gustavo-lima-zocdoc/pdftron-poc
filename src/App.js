@@ -461,7 +461,6 @@ function App() {
           <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
           <button type="button" onClick={controller.insertRadioField}>Radio button</button><br />
           <button type="button" onClick={controller.insertSignatureField}>Signature</button><br />
-          <p><b>no insert in edit</b></p>
         </div>
         <div className="webviewer" ref={viewerDiv}></div>
         <div className="right-sidebar">
