@@ -99,11 +99,12 @@ function App() {
           widgetAnnot.Y = 100;
           widgetAnnot.Width = 50;
           widgetAnnot.Height = 20;
+          widgetAnnot.backgroundColor = new Annotations.Color(255,255,255,0.4);
 
           //add the form field and widget annotation
+          annotationManager.getFieldManager().addField(field);
           annotationManager.addAnnotation(widgetAnnot);
           annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
         }
         setController(baseController=>({
           ...baseController,
@@ -163,9 +164,9 @@ function App() {
           widgetAnnot.Height = 20;
       
           //add the form field and widget annotation
+          annotationManager.getFieldManager().addField(field);
           annotationManager.addAnnotation(widgetAnnot);
           annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
         }
         setController(baseController=>({
           ...baseController,
@@ -224,10 +225,10 @@ function App() {
           widgetAnnot2.Height = 20;
 
           //add the form field and widget annotation
+          annotationManager.getFieldManager().addField(field);
           annotationManager.addAnnotation(widgetAnnot1);
           annotationManager.addAnnotation(widgetAnnot2);
           annotationManager.drawAnnotationsFromList([widgetAnnot1, widgetAnnot2]);
-          annotationManager.getFieldManager().addField(field);
         }
         setController(baseController=>({
           ...baseController,
@@ -268,11 +269,12 @@ function App() {
           widgetAnnot.Y = 100;
           widgetAnnot.Width = 50;
           widgetAnnot.Height = 20;
+          widgetAnnot.backgroundColor = new Annotations.Color(255,255,255,0.4);
 
           //add the form field and widget annotation
+          annotationManager.getFieldManager().addField(field);
           annotationManager.addAnnotation(widgetAnnot);
           annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
         }
         setController(baseController=>({
           ...baseController,
@@ -314,9 +316,9 @@ function App() {
           widgetAnnot.Height = 20;
 
           //add the form field and widget annotation
+          annotationManager.getFieldManager().addField(field);
           annotationManager.addAnnotation(widgetAnnot);
           annotationManager.drawAnnotationsFromList([widgetAnnot]);
-          annotationManager.getFieldManager().addField(field);
         }
         setController(baseController=>({
           ...baseController,
@@ -449,14 +451,14 @@ function App() {
     <div className="App">
       <div className="actions">
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
-        <button type="button" onClick={controller.selectTextBoxCreating}>Texbox Creation</button>
-        <button type="button" onClick={controller.selectCheckboxCreating}>CheckBox Creation</button>
+        {/* <button type="button" onClick={controller.selectTextBoxCreating}>Texbox Creation</button>
+        <button type="button" onClick={controller.selectCheckboxCreating}>CheckBox Creation</button> */}
       </div>
       <div className="interface">
         <div className="left-sidebar">
-          <button type="button" onClick={controller.insertTextField}>Textbox</button> <b>no edit</b><br />
+          <button type="button" onClick={controller.insertTextField}>Textbox</button><br />
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
-          <button type="button" onClick={controller.insertDropdownField}>Dropdown</button> <b>no edit</b><br />
+          <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
           <button type="button" onClick={controller.insertRadioField}>Radio button</button><br />
           <button type="button" onClick={controller.insertSignatureField}>Signature</button><br />
           <p><b>no insert in edit</b></p>
