@@ -7,6 +7,7 @@ import WebViewer from '@pdftron/webviewer';
 function App() {
   const viewerDiv = useRef(null)
   const [fields,setFields] = useState([])
+  const [option_groups,setOption_groups] = useState([])
   const [annotationsReference,setAnnotationsReference] = useState([])
   // console.log(fields,annotationsReference)
   const [controller,setController] = useState({
@@ -23,6 +24,7 @@ function App() {
       selectedAnnotations: [],
       deleteField: ()=>{},
       setFieldData: ()=>{},
+      handleGroupingCheckboxes: ()=>{},
   })
   const [pages,setPages] = useState([])
   useEffect(()=>{
@@ -39,13 +41,13 @@ function App() {
       // console.log('instance.UI',instance.UI)
 
       /* ===== SETUP ===== */
-      instance.UI.disableElements([
-        'annotationCommentButton',
-        'annotationStyleEditButton',
-        'annotationDeleteButton',
-        'linkButton',
-        'annotationGroupButton',
-      ]);
+        instance.UI.disableElements([
+          'annotationCommentButton',
+          'annotationStyleEditButton',
+          'annotationDeleteButton',
+          'linkButton',
+          'annotationGroupButton',
+        ]);
       /* ===== SETUP ===== */
 
       /* ===== ACTIONS - Programmatically ===== */
@@ -299,6 +301,29 @@ function App() {
           ...baseController,
           setFieldData: setFieldData
         }));
+        function handleGroupingCheckboxes(event){
+          const {checked} = event.target;
+          if(checked===true){
+            const IntakeTemplateOptionGroup = {
+              option_group_id: generateGUID(),
+              option_group_name: 'GroupName',
+              option_group_helper_text: 'GroupHelper',
+              option_group_is_required: true,
+            }
+            setOption_groups(baseOption_groups=>[
+              ...baseOption_groups,
+              IntakeTemplateOptionGroup
+            ]);
+            const selectedAnnotations = annotationManager.getSelectedAnnotations();
+            selectedAnnotations.forEach(selectedAnnotation => {
+              setFieldData(selectedAnnotation,'option_group_id',IntakeTemplateOptionGroup.option_group_id);
+            });
+          }
+        }
+        setController(baseController=>({
+          ...baseController,
+          handleGroupingCheckboxes: handleGroupingCheckboxes
+        }));
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
     })
   },[])
@@ -307,13 +332,14 @@ function App() {
       <div className="actions">
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
         {/* {JSON.stringify(annotationsReference)} */}
-        {JSON.stringify(fields)}
         <br/>
       </div>
       <div className="interface">
         <div className="left-sidebar">
           <button type="button" onClick={controller.insertTextField}>Textbox</button><br />
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
+          {JSON.stringify(fields)}<br/><br/>
+          {JSON.stringify(option_groups)}
         </div>
         <div className="webviewer" ref={viewerDiv}></div>
         <div className="right-sidebar">
@@ -332,7 +358,7 @@ function App() {
                 }
               </ul>
             </div>
-          ):(controller.selectedAnnotations.length==1)?(
+          ):(controller.selectedAnnotations.length===1)?(
             <div className="element-selection">
               {controller.selectedAnnotations.map(annotation=>(<span key={annotation.Id}>
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Annotation.html */}
@@ -347,7 +373,7 @@ function App() {
           ):(
             <div className="element-selection">
               <h2>{controller.selectedAnnotations.length} fields selected</h2>
-                <p><input type="checkbox" onChange={(e)=>{alert('grouped')}} /> Group checkboxes</p>
+              <p><input type="checkbox" onChange={controller.handleGroupingCheckboxes} /> Group checkboxes</p>
             </div>
           )}
         </div>
