@@ -44,6 +44,7 @@ function App() {
         'annotationStyleEditButton',
         'annotationDeleteButton',
         'linkButton',
+        'annotationGroupButton',
       ]);
       /* ===== SETUP ===== */
 
@@ -331,7 +332,7 @@ function App() {
                 }
               </ul>
             </div>
-          ):(
+          ):(controller.selectedAnnotations.length==1)?(
             <div className="element-selection">
               {controller.selectedAnnotations.map(annotation=>(<span key={annotation.Id}>
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Annotation.html */}
@@ -342,6 +343,11 @@ function App() {
                 <p>Field name: <input type="text" value={fields.find(field=>field.field_id===annotation.field.field_id)?.patient_facing_field_name} onChange={(e)=>controller.setFieldData(annotation,'patient_facing_field_name',e.target.value)} /></p>
                 <p>Helper: <input type="text" value={fields.find(field=>field.field_id===annotation.field.field_id)?.field_helper_text} onChange={(e)=>controller.setFieldData(annotation,'field_helper_text',e.target.value)} /></p>
               </span>))}
+            </div>
+          ):(
+            <div className="element-selection">
+              <h2>{controller.selectedAnnotations.length} fields selected</h2>
+                <p><input type="checkbox" onChange={(e)=>{alert('grouped')}} /> Group checkboxes</p>
             </div>
           )}
         </div>
