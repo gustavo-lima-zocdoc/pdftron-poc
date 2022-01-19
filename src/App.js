@@ -7,7 +7,7 @@ import WebViewer from '@pdftron/webviewer';
 function App() {
   const viewerDiv = useRef(null)
   const [fields,setFields] = useState([])
-  const [annotationReference,setAnnotationReference] = useState([])
+  const [annotationsReference,setAnnotationsReference] = useState([])
   const [controller,setController] = useState({
     /* ===== ACTIONS - Programmatically ===== */
       selectToolbarGroupForms: ()=>{},
@@ -19,7 +19,7 @@ function App() {
       pageCount: 0,
       goToPage: ()=>{},
     /* ===== RIGHT SIDEBAR - Element Selection ===== */
-      selectedElements: [],
+      selectedAnnotations: [],
       deleteField: ()=>{},
       getFieldData: ()=>{},
       setFieldData: ()=>{},
@@ -34,7 +34,7 @@ function App() {
       },
       viewerDiv.current
     ).then((instance)=>{
-      const { documentViewer, annotationManager, Annotations, Tools } = instance.Core;
+      const { documentViewer, annotationManager, Annotations } = instance.Core;
       // console.log('instance.Core',instance.Core)
       // console.log('instance.UI',instance.UI)
 
@@ -61,18 +61,20 @@ function App() {
         function generateGUID(){
           return Math.floor(Math.random() * 9999) + 1000
         }
-        function insertAnnotation({
-          field_type,
-          patient_facing_field_name,
-          field_position: {
-            page_number,
-            x_coordinate,
-            y_coordinate,
-            x_length,
-            y_length,
-          },
-        }){
+        function insertAnnotation(IntakeTemplateField){
           // https://www.pdftron.com/api/web/Core.Annotations.FreeTextAnnotation.html
+          const {
+            field_type,
+            patient_facing_field_name,
+            field_position: {
+              page_number,
+              x_coordinate,
+              y_coordinate,
+              x_length,
+              y_length,
+            },
+          } = IntakeTemplateField;
+
           const annotation = new Annotations.FreeTextAnnotation();
 
           const contents = (field_type==='checkbox')? '' : patient_facing_field_name
@@ -89,15 +91,16 @@ function App() {
           annotation.TextColor = new Annotations.Color(1, 96, 204);
           annotation.FillColor = new Annotations.Color(220, 234, 249);
           annotation.StrokeColor = new Annotations.Color(1, 96, 204);
+          annotation.field = IntakeTemplateField;
           
           annotation.setRotationControlEnabled(false);
 
           annotationManager.addAnnotation(annotation, { autoFocus: false });
           annotationManager.redrawAnnotation(annotation);
 
-          const selectedAnnots = annotationManager.getSelectedAnnotations();
-          if (selectedAnnots.length > 0) {
-            selectedAnnots.forEach(selectedAnnot=>annotationManager.deselectAnnotation(selectedAnnot));
+          const selectedAnnotations = annotationManager.getSelectedAnnotations();
+          if (selectedAnnotations.length > 0) {
+            selectedAnnotations.forEach(selectedAnnotation=>annotationManager.deselectAnnotation(selectedAnnotation));
           }
 
           annotationManager.selectAnnotation(annotation);
@@ -109,7 +112,7 @@ function App() {
           annotation_id,
           annotation,
         }){
-          setAnnotationReference(baseAnnotationReference=>[
+          setAnnotationsReference(baseAnnotationReference=>[
             ...baseAnnotationReference,
             {
               field_id,
@@ -118,11 +121,23 @@ function App() {
             }
           ])
         }
-        function addField(field){
-          setFields(baseFields=>[
-            ...baseFields,
-            field
-          ])
+        function handleField(field,action){
+          setFields(baseFields=>{
+            const foundFieldIndex = baseFields.findIndex(baseField=>baseField.field_id===field.field_id);
+            if(foundFieldIndex>=0) {
+              const newBaseFields = [...baseFields]
+              if(action==='delete') {
+                newBaseFields.splice(foundFieldIndex,1)
+                return newBaseFields
+              }
+              newBaseFields[foundFieldIndex] = field
+              return newBaseFields
+            }
+            return [
+              ...baseFields,
+              field
+            ]
+          })
         }
         function insertProgrammaticallyTextField(){
           const FieldPosition = {
@@ -141,7 +156,6 @@ function App() {
             field_position: FieldPosition,
             // option_group_id: '',
           }
-          addField(IntakeTemplateField);
           const annotation = insertAnnotation(IntakeTemplateField);
           addAnnotationReference({
             field_id: IntakeTemplateField.field_id,
@@ -170,7 +184,6 @@ function App() {
             field_position: FieldPosition,
             // option_group_id: '',
           }
-          addField(IntakeTemplateField);
           const annotation = insertAnnotation(IntakeTemplateField);
           addAnnotationReference({
             field_id: IntakeTemplateField.field_id,
@@ -225,41 +238,31 @@ function App() {
       /* ===== RIGHT SIDEBAR - Page manipulation ===== */
 
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
+        annotationManager.addEventListener('annotationChanged', (annotations, action) => {
+          annotations.forEach(annotation=>{
+            if(annotation.field){
+              annotation.field.field_position = {
+                page_number: annotation.PageNumber,
+                x_coordinate: annotation.X,
+                y_coordinate: annotation.Y,
+                x_length: annotation.Width,
+                y_length: annotation.Height,
+              }
+              handleField(annotation.field,action);
+            }
+          });
+        });
         annotationManager.addEventListener('annotationSelected', (annotations, action) => {
           // if (action === 'selected') {
           //   console.log('annotation selection');
           // } else if (action === 'deselected') {
           //   console.log('annotation deselection');
           // }
-    
-          // console.log('annotation list', annotations);
-          const selectedAnnots = annotationManager.getSelectedAnnotations();
+          const selectedAnnotations = annotationManager.getSelectedAnnotations();
           setController(baseController=>({
             ...baseController,
-            selectedElements: selectedAnnots
+            selectedAnnotations,
           }));
-          // console.log('selectedAnnots',selectedAnnots);
-          // selectedAnnots.map(annotation=>{
-
-          //   /* const fieldManager = annotationManager.getFieldManager();
-          //   const field = fieldManager.getField(annotation.Id);
-          //   console.log('field',field) */
-
-          //   const fieldManager = annotationManager.getFieldManager();
-          //   fieldManager.forEachField((field)=>{
-          //     // https://www.pdftron.com/api/web/Core.Annotations.Forms.Field.html
-          //     console.log('field',field)
-          //     console.log('field.type',field.type)
-          //     console.log('field.flags',field.flags)
-          //   });
-
-          //   // fieldManager.forEachField(getFieldNameAndValue);
-          //   return annotation
-          // });
-    
-          // if (annotations === null && action === 'deselected') {
-          //   console.log('all annotations deselected');
-          // }
         });
         function deleteField(annotation){
           annotationManager.deleteAnnotations([annotation])
@@ -312,6 +315,8 @@ function App() {
     <div className="App">
       <div className="actions">
         <button type="button" onClick={controller.selectToolbarGroupForms}>Select Forms</button>
+        {/* {JSON.stringify(annotationsReference)} */}
+        {JSON.stringify(fields)}
         <br/>
       </div>
       <div className="interface">
@@ -321,7 +326,7 @@ function App() {
         </div>
         <div className="webviewer" ref={viewerDiv}></div>
         <div className="right-sidebar">
-          {controller.selectedElements.length<1?(
+          {controller.selectedAnnotations.length<1?(
             <div className="page-manipulation">
               <h2>Form details</h2>
               <p>Viewing: Page  {controller.currentPage} of {controller.pageCount}</p>
@@ -338,7 +343,7 @@ function App() {
             </div>
           ):(
             <div className="element-selection">
-              {controller.selectedElements.map(annotation=>(<span key={annotation.Id}>
+              {controller.selectedAnnotations.map(annotation=>(<span key={annotation.Id}>
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Annotation.html */}
                 {/* https://www.pdftron.com/api/web/Core.Annotations.Forms.FieldManager.html#main */}
                 <h2>{annotation.getFormFieldPlaceHolderType()}</h2>
