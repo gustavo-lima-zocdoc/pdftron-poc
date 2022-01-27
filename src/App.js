@@ -425,6 +425,9 @@ function App() {
         }));
         documentViewer.addEventListener('documentLoaded', () => {
           documentViewer.getAnnotationsLoadedPromise().then(function() {
+            const allAnnotations = annotationManager.getAnnotationsList();
+            console.log('allAnnotations',allAnnotations)
+
             function setFieldData(annotation,key,value){
               const fieldManager = annotationManager.getFieldManager();
               const field = fieldManager.getField(annotation.Hi['trn-form-field-name']);
