@@ -175,7 +175,7 @@ function App() {
             const scrollLeft = scrollElement.scrollLeft || 0;
             const scrollTop = scrollElement.scrollTop || 0;
 
-            alert(`
+            console.log(`
               e.pageX ${e.pageX}\n
               e.pageY ${e.pageY}\n
 
@@ -622,11 +622,11 @@ function App() {
   }
 
   const ondragging = (e) => {
-    console.log('e.clientX',e.clientX);
-    console.log('e.clientY',e.clientY);
-    if(e.clientX > 0 && e.clientY > 0) setDragMousePosition({
-      x: e.clientX,
-      y: e.clientY,
+    console.log('e.pageX',e.pageX);
+    console.log('e.pageY',e.pageY);
+    if(e.pageX > 0 && e.pageY > 0) setDragMousePosition({
+      x: e.pageX,
+      y: e.pageY,
     });
   }
   return (
