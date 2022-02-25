@@ -71,7 +71,7 @@ function App() {
       /* ===== ACTIONS - Programmatically ===== */
 
       /* ===== LEFT SIDEBAR - Insertions ===== */
-        function insertProgrammaticallyTextField(){
+        function insertProgrammaticallyTextField(event){
           // set flags for multiline and required
           const flags = new Annotations.WidgetFlags();
           // flags.set('Multiline', true);
@@ -89,14 +89,58 @@ function App() {
             flags,
             font,
           });
+          const pageNumber = 1;
+
+          /**
+           * =======================
+           * ==== DRAG AND DROP ====
+           * =======================
+           */
+          // https://www.pdftron.com/documentation/web/guides/coordinates/
+          const displayMode = instance.Core.documentViewer.getDisplayModeManager().getDisplayMode();
+
+          const getMouseLocation = e => {
+            const scrollElement = documentViewer.getScrollViewElement();
+            const scrollLeft = scrollElement.scrollLeft || 0;
+            const scrollTop = scrollElement.scrollTop || 0;
+          
+            return {
+              x: e.pageX + scrollLeft,
+              y: e.pageY + scrollTop
+            };
+          };
+          const windowCoordinates = getMouseLocation(event);
+
+          const page = displayMode.getSelectedPages(windowCoordinates, windowCoordinates);
+          const droppedPage = (page.first !== null) ? page.first : instance.Core.docViewer.getCurrentPage();
+
+          const pageCoordinates = displayMode.windowToPage(windowCoordinates, droppedPage);
+
+          console.log('pageCoordinates',pageCoordinates);
+
+          // const zoom = instance.Core.documentViewer.getZoom();
+
+          // console.log('zoom',zoom);
+
+          // const pagePoint = {
+          //   x: pageCoordinates.x * zoom,
+          //   y: pageCoordinates.y * zoom
+          // };
+
+          const pagePoint = {
+            x: pageCoordinates.x,
+            y: pageCoordinates.y
+          };
+
+          console.log('pagePoint',pagePoint);
 
           // create a widget annotation
           const widgetAnnot = new Annotations.TextWidgetAnnotation(field)
 
           // set position and size
-          widgetAnnot.PageNumber = 1;
-          widgetAnnot.X = 100;
-          widgetAnnot.Y = 100;
+          widgetAnnot.PageNumber = pageNumber;
+          widgetAnnot.X = pagePoint.x;
+          widgetAnnot.Y = pagePoint.y;
           widgetAnnot.Width = 50;
           widgetAnnot.Height = 20;
           widgetAnnot.backgroundColor = new Annotations.Color(255,255,255,0.4);
@@ -450,6 +494,24 @@ function App() {
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
     })
   },[])
+
+  const allowDrop = (ev) => {
+    console.log("allowDrop start");
+    ev.preventDefault();
+  }
+
+  const drag = (e) => {
+    var posX = e.clientX;
+    var posY = e.clientY;
+    e.dataTransfer.setData("x", posX);
+    e.dataTransfer.setData("y", posY);
+  }
+
+  const drop = (e) => {
+    e.preventDefault();
+
+    controller.insertTextField(e);
+  }
   return (
     <div className="App">
       <div className="actions">
@@ -459,7 +521,8 @@ function App() {
       </div>
       <div className="interface">
         <div className="left-sidebar">
-          <button type="button" onClick={controller.insertTextField}>Textbox</button><br />
+        <button draggable onDragStart={(e)=> drag(e)} onDragEnd={drop} onDragOver={allowDrop}>Textbox</button><br />
+          {/* <button type="button" onClick={controller.insertTextField}>Textbox</button><br /> */}
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
           <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
           <button type="button" onClick={controller.insertRadioField}>Radio button</button><br />
