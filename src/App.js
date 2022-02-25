@@ -489,7 +489,7 @@ function App() {
       </div>
       <div className="interface">
         <div className="left-sidebar">
-        <button draggable onDragStart={(e)=> drag(e,controller.insertTextField)} onDragEnd={drop} onDragOver={allowDrop}>Textbox</button><br />
+        <button draggable onDragStart={(e)=> drag(e)} onDragEnd={drop} onDragOver={allowDrop}>Textbox</button><br />
           {/* <button type="button" onClick={controller.insertTextField}>Textbox</button><br /> */}
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
           <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
