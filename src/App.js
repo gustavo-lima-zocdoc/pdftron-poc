@@ -71,7 +71,7 @@ function App() {
       /* ===== ACTIONS - Programmatically ===== */
 
       /* ===== LEFT SIDEBAR - Insertions ===== */
-        function insertProgrammaticallyTextField(){
+        function insertProgrammaticallyTextField(setx, sety){
           // set flags for multiline and required
           const flags = new Annotations.WidgetFlags();
           // flags.set('Multiline', true);
@@ -89,14 +89,24 @@ function App() {
             flags,
             font,
           });
+          const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
+          const pageNumber = 1;
+          const pagePoint = {
+            x: setx,
+            y: sety
+          };
 
+          const windowPoint = displayMode.pageToWindow(pagePoint, pageNumber);
+          const originalPagePoint = displayMode.windowToPage(windowPoint, pageNumber);
+          console.log("y=======", originalPagePoint.x);
+          console.log("y=======", originalPagePoint.x);
           // create a widget annotation
           const widgetAnnot = new Annotations.TextWidgetAnnotation(field)
 
           // set position and size
-          widgetAnnot.PageNumber = 1;
-          widgetAnnot.X = 100;
-          widgetAnnot.Y = 100;
+          widgetAnnot.PageNumber = pageNumber;
+          widgetAnnot.X = originalPagePoint.x;
+          widgetAnnot.Y = originalPagePoint.y;
           widgetAnnot.Width = 50;
           widgetAnnot.Height = 20;
           widgetAnnot.backgroundColor = new Annotations.Color(255,255,255,0.4);
@@ -450,6 +460,26 @@ function App() {
       /* ===== RIGHT SIDEBAR - Element Selection ===== */
     })
   },[])
+
+  const allowDrop = (ev) => {
+    console.log("allowDrop start");
+    ev.preventDefault();
+  }
+
+  const drag = (e) => {
+    var posX = e.clientX;
+    var posY = e.clientY;
+    e.dataTransfer.setData("x", posX);
+    e.dataTransfer.setData("y", posY);
+  }
+
+  const drop = (e) => {
+    e.preventDefault();
+    var x = e.dataTransfer.getData("x");
+    var y = e.dataTransfer.getData("y");
+
+    controller.insertTextField(x,y);
+    }
   return (
     <div className="App">
       <div className="actions">
@@ -459,7 +489,8 @@ function App() {
       </div>
       <div className="interface">
         <div className="left-sidebar">
-          <button type="button" onClick={controller.insertTextField}>Textbox</button><br />
+        <button draggable onDragStart={(e)=> drag(e,controller.insertTextField)} onDragEnd={drop} onDragOver={allowDrop}>Textbox</button><br />
+          {/* <button type="button" onClick={controller.insertTextField}>Textbox</button><br /> */}
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
           <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
           <button type="button" onClick={controller.insertRadioField}>Radio button</button><br />
