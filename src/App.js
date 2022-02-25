@@ -71,7 +71,7 @@ function App() {
       /* ===== ACTIONS - Programmatically ===== */
 
       /* ===== LEFT SIDEBAR - Insertions ===== */
-        function insertProgrammaticallyTextField(setx, sety){
+        function insertProgrammaticallyTextField(event){
           // set flags for multiline and required
           const flags = new Annotations.WidgetFlags();
           // flags.set('Multiline', true);
@@ -89,24 +89,58 @@ function App() {
             flags,
             font,
           });
-          const displayMode = documentViewer.getDisplayModeManager().getDisplayMode();
           const pageNumber = 1;
+
+          /**
+           * =======================
+           * ==== DRAG AND DROP ====
+           * =======================
+           */
+          // https://www.pdftron.com/documentation/web/guides/coordinates/
+          const displayMode = instance.Core.documentViewer.getDisplayModeManager().getDisplayMode();
+
+          const getMouseLocation = e => {
+            const scrollElement = documentViewer.getScrollViewElement();
+            const scrollLeft = scrollElement.scrollLeft || 0;
+            const scrollTop = scrollElement.scrollTop || 0;
+          
+            return {
+              x: e.pageX + scrollLeft,
+              y: e.pageY + scrollTop
+            };
+          };
+          const windowCoordinates = getMouseLocation(event);
+
+          const page = displayMode.getSelectedPages(windowCoordinates, windowCoordinates);
+          const droppedPage = (page.first !== null) ? page.first : instance.Core.docViewer.getCurrentPage();
+
+          const pageCoordinates = displayMode.windowToPage(windowCoordinates, droppedPage);
+
+          console.log('pageCoordinates',pageCoordinates);
+
+          // const zoom = instance.Core.documentViewer.getZoom();
+
+          // console.log('zoom',zoom);
+
+          // const pagePoint = {
+          //   x: pageCoordinates.x * zoom,
+          //   y: pageCoordinates.y * zoom
+          // };
+
           const pagePoint = {
-            x: setx,
-            y: sety
+            x: pageCoordinates.x,
+            y: pageCoordinates.y
           };
 
-          const windowPoint = displayMode.pageToWindow(pagePoint, pageNumber);
-          const originalPagePoint = displayMode.windowToPage(windowPoint, pageNumber);
-          console.log("y=======", originalPagePoint.x);
-          console.log("y=======", originalPagePoint.x);
+          console.log('pagePoint',pagePoint);
+
           // create a widget annotation
           const widgetAnnot = new Annotations.TextWidgetAnnotation(field)
 
           // set position and size
           widgetAnnot.PageNumber = pageNumber;
-          widgetAnnot.X = originalPagePoint.x;
-          widgetAnnot.Y = originalPagePoint.y;
+          widgetAnnot.X = pagePoint.x;
+          widgetAnnot.Y = pagePoint.y;
           widgetAnnot.Width = 50;
           widgetAnnot.Height = 20;
           widgetAnnot.backgroundColor = new Annotations.Color(255,255,255,0.4);
@@ -475,11 +509,9 @@ function App() {
 
   const drop = (e) => {
     e.preventDefault();
-    var x = e.dataTransfer.getData("x");
-    var y = e.dataTransfer.getData("y");
 
-    controller.insertTextField(x,y);
-    }
+    controller.insertTextField(e);
+  }
   return (
     <div className="App">
       <div className="actions">
