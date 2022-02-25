@@ -28,6 +28,61 @@ function App() {
       setFieldData: ()=>{},
   })
   const [pages,setPages] = useState([])
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const [mousePosition,setMousePosition] = useState({
+    x: undefined,
+    y: undefined,
+  });
+  function onMouseUpdate(e) {
+    console.log('e.pageX',e.pageX);
+    console.log('e.pageY',e.pageY);
+    setMousePosition({
+      x: e.pageX,
+      y: e.pageY,
+    });
+  }
+  useEffect(()=>{
+    document.addEventListener('mousemove', onMouseUpdate, false);
+    document.addEventListener('mouseenter', onMouseUpdate, false);
+
+    return ()=>{
+      document.removeEventListener('mousemove');
+      document.removeEventListener('mouseenter');
+    }
+  },[])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   useEffect(()=>{
     WebViewer(
       {
@@ -40,6 +95,22 @@ function App() {
       const { documentViewer, annotationManager, Annotations, Tools } = instance.Core;
       console.log('instance.Core',instance.Core)
       console.log('instance.UI',instance.UI)
+      // DRAG AND DROP
+      let webViewerMousePosition = {
+        x: undefined,
+        y: undefined,
+      };
+      function onWebViewerMouseUpdate(e) {
+        console.log('e.pageX wv',e.pageX);
+        console.log('e.pageY wv',e.pageY);
+        webViewerMousePosition = {
+          x: e.pageX,
+          y: e.pageY,
+        };
+      }
+      instance.iframeWindow.document.addEventListener('mousemove', onWebViewerMouseUpdate, false);
+      instance.iframeWindow.document.addEventListener('mouseenter', onWebViewerMouseUpdate, false);
+      // DRAG AND DROP
       /* ===== ACTIONS - Programmatically ===== */
         function selectToolbarGroupForms(){
           instance.UI.setToolbarGroup('toolbarGroup-Forms');
@@ -71,7 +142,7 @@ function App() {
       /* ===== ACTIONS - Programmatically ===== */
 
       /* ===== LEFT SIDEBAR - Insertions ===== */
-        function insertProgrammaticallyTextField(event){
+        function insertProgrammaticallyTextField(event,mouseX,mouseY){
           // set flags for multiline and required
           const flags = new Annotations.WidgetFlags();
           // flags.set('Multiline', true);
@@ -103,16 +174,48 @@ function App() {
             const scrollElement = documentViewer.getScrollViewElement();
             const scrollLeft = scrollElement.scrollLeft || 0;
             const scrollTop = scrollElement.scrollTop || 0;
-          
+
+            alert(`
+              e.pageX ${e.pageX}\n
+              e.pageY ${e.pageY}\n
+
+              mouseX ${mouseX}\n
+              mouseY ${mouseY}\n
+
+              webViewerMousePosition.x ${webViewerMousePosition.x}\n
+              webViewerMousePosition.y ${webViewerMousePosition.y}\n
+
+              mouseX+webViewerMousePosition.x ${mouseX+webViewerMousePosition.x}\n
+              mouseY+webViewerMousePosition.y ${mouseY+webViewerMousePosition.y}\n
+
+              viewerDiv.current.getBoundingClientRect().top ${viewerDiv.current.getBoundingClientRect().top}\n
+              viewerDiv.current.getBoundingClientRect().left ${viewerDiv.current.getBoundingClientRect().left}\n
+
+              viewerDiv.current.getBoundingClientRect().top+webViewerMousePosition.x ${viewerDiv.current.getBoundingClientRect().top+webViewerMousePosition.x}\n
+              viewerDiv.current.getBoundingClientRect().left+webViewerMousePosition.y ${viewerDiv.current.getBoundingClientRect().left+webViewerMousePosition.y}\n
+            `);
+
             return {
-              x: e.pageX + scrollLeft,
-              y: e.pageY + scrollTop
+              x: Number(mouseX) + scrollLeft,
+              y: Number(mouseY) + scrollTop
             };
+
+            // return {
+            //   x: (Number(mouseX) + Math.round(Number(viewerDiv.current.getBoundingClientRect().top)) + scrollLeft),
+            //   y: (Number(mouseY) + Math.round(Number(viewerDiv.current.getBoundingClientRect().left)) + scrollTop)
+            // };
+          
+            // return {
+            //   x: e.pageX + scrollLeft,
+            //   y: e.pageY + scrollTop
+            // };
           };
           const windowCoordinates = getMouseLocation(event);
 
+          console.log('windowCoordinates',windowCoordinates);
+
           const page = displayMode.getSelectedPages(windowCoordinates, windowCoordinates);
-          const droppedPage = (page.first !== null) ? page.first : instance.Core.docViewer.getCurrentPage();
+          const droppedPage = (page.first !== null) ? page.first : documentViewer.getCurrentPage();
 
           const pageCoordinates = displayMode.windowToPage(windowCoordinates, droppedPage);
 
@@ -495,6 +598,11 @@ function App() {
     })
   },[])
 
+  const [dragMousePosition,setDragMousePosition] = useState({
+    x: undefined,
+    y: undefined,
+  });
+
   const allowDrop = (ev) => {
     console.log("allowDrop start");
     ev.preventDefault();
@@ -510,7 +618,16 @@ function App() {
   const drop = (e) => {
     e.preventDefault();
 
-    controller.insertTextField(e);
+    controller.insertTextField(e,dragMousePosition.x,dragMousePosition.y);
+  }
+
+  const ondragging = (e) => {
+    console.log('e.clientX',e.clientX);
+    console.log('e.clientY',e.clientY);
+    if(e.clientX > 0 && e.clientY > 0) setDragMousePosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
   }
   return (
     <div className="App">
@@ -521,7 +638,18 @@ function App() {
       </div>
       <div className="interface">
         <div className="left-sidebar">
-        <button draggable onDragStart={(e)=> drag(e)} onDragEnd={drop} onDragOver={allowDrop}>Textbox</button><br />
+        <button 
+          draggable 
+          onDragStart={(e)=> drag(e)} 
+          onDrag={ondragging}
+          onDragEnd={drop} 
+          // onMouseLeave={drop}
+          onDragOver={allowDrop}
+          // onMouseUp={drop}
+          // onDrop={drop}
+          // onDragCapture={drop}
+          // onDropCapture={drop}
+        >Textbox</button><br />
           {/* <button type="button" onClick={controller.insertTextField}>Textbox</button><br /> */}
           <button type="button" onClick={controller.insertCheckboxField}>Checkbox</button><br />
           <button type="button" onClick={controller.insertDropdownField}>Dropdown</button><br />
