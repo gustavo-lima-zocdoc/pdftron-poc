@@ -175,6 +175,12 @@ function App() {
             const scrollLeft = scrollElement.scrollLeft || 0;
             const scrollTop = scrollElement.scrollTop || 0;
 
+            if(e.pageX === 0 && e.pageY === 0){
+              e.pageX = e.screenX;
+              e.pageY = e.screenY;
+              mouseX = e.screenX;
+              mouseY = e.screenY;
+            }
             console.log(`
               e.pageX ${e.pageX}\n
               e.pageY ${e.pageY}\n
@@ -613,6 +619,8 @@ function App() {
     var posY = e.clientY;
     e.dataTransfer.setData("x", posX);
     e.dataTransfer.setData("y", posY);
+    e.dataTransfer.setData("x", e.screenX);
+    e.dataTransfer.setData("y", e.screenY);
   }
 
   const drop = (e) => {
@@ -622,11 +630,15 @@ function App() {
   }
 
   const ondragging = (e) => {
-    console.log('e.pageX',e.pageX);
-    console.log('e.pageY',e.pageY);
+    var x = e.dataTransfer.getData("x");
+    var y = e.dataTransfer.getData("y");
     if(e.pageX > 0 && e.pageY > 0) setDragMousePosition({
       x: e.pageX,
       y: e.pageY,
+    });
+    if(e.pageX === 0 && e.pageY === 0) setDragMousePosition({
+      x: x,
+      y: y,
     });
   }
   return (
