@@ -178,8 +178,8 @@ function App() {
             if(e.pageX === 0 && e.pageY === 0){
               e.pageX = e.screenX - e.target.offsetHeight * 10;
               e.pageY = e.screenY - e.target.offsetTop * 1.7;
-              mouseX = e.screenX - e.target.offsetHeight * 10;
-              mouseY = e.screenY - e.target.offsetTop * 1.7;
+              // mouseX = e.screenX - e.target.offsetHeight * 10;
+              // mouseY = e.screenY - e.target.offsetTop * 1.7;
             }
             console.log(`
               e.pageX ${e.pageX}\n
@@ -625,8 +625,11 @@ function App() {
 
   const drop = (e) => {
     e.preventDefault();
-
-    controller.insertTextField(e,dragMousePosition.x,dragMousePosition.y);
+    const firefoxSupport = {
+        x: e.screenX - (e.target.offsetHeight * 10),
+        y: e.screenY - (e.target.offsetTop * 1.7),
+    };
+    controller.insertTextField(e,dragMousePosition.x||firefoxSupport.x,dragMousePosition.y||firefoxSupport.y);
   }
 
   const ondragging = (e) => {
@@ -636,10 +639,10 @@ function App() {
       x: e.pageX,
       y: e.pageY,
     });
-    if(e.pageX === 0 && e.pageY === 0) setDragMousePosition({
-      x: x,
-      y: y,
-    });
+    // if(e.pageX === 0 && e.pageY === 0) setDragMousePosition({
+    //   x: x,
+    //   y: y,
+    // });
   }
   return (
     <div className="App">
