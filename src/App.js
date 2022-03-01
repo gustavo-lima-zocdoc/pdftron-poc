@@ -176,10 +176,10 @@ function App() {
             const scrollTop = scrollElement.scrollTop || 0;
 
             if(e.pageX === 0 && e.pageY === 0){
-              e.pageX = e.screenX;
-              e.pageY = e.screenY;
-              mouseX = e.screenX;
-              mouseY = e.screenY;
+              e.pageX = e.screenX - e.target.offsetHeight * 10;
+              e.pageY = e.screenY - e.target.offsetTop * 1.7;
+              mouseX = e.screenX - e.target.offsetHeight * 10;
+              mouseY = e.screenY - e.target.offsetTop * 1.7;
             }
             console.log(`
               e.pageX ${e.pageX}\n
