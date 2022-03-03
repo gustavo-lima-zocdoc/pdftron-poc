@@ -64,7 +64,13 @@ function App() {
   },[])
 
 
-
+  function blobToBase64(blob) {
+    return new Promise((resolve, _) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
 
 
 
@@ -480,7 +486,7 @@ function App() {
       /* ===== LEFT SIDEBAR - Insertions ===== */
 
       /* ===== RIGHT SIDEBAR - Page manipulation ===== */
-        documentViewer.addEventListener('documentLoaded', () => {
+        documentViewer.addEventListener('documentLoaded', async () => {
           const doc = documentViewer.getDocument();
           const currentPage = instance.UI.getCurrentPageNumber()
           const pageCount = instance.UI.getPageCount()
@@ -501,6 +507,20 @@ function App() {
             currentPage,
             pageCount,
           }));
+          const req = new XMLHttpRequest();
+          const xfdfString = await annotationManager.exportAnnotations();
+          const options = { xfdfString };
+          const data = await doc.getFileData(options);
+          const arr = new Uint8Array(data);
+          const blob = new Blob([arr], { type: 'application/pdf' });
+          req.open("POST", '/api/test', true);
+          req.onload = function (oEvent) {
+            console.log(oEvent);
+          };
+          blobToBase64(blob).then(res => {
+            console.log(res);
+            req.send(res);
+          });
         });
         function setCurrentPageNumber(pageNumber){
           instance.UI.setCurrentPageNumber(pageNumber)
